@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/olafal0/configinator"
+	"github.com/olafal0/configinator/configinator"
 )
 
 func main() {
