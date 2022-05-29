@@ -1,0 +1,17 @@
+[settings]
+name = "Foobar"
+package_name = "example" # go package of generated file
+
+[vars.PGUsername]
+var = "FOOBAR_PG_USERNAME" # Environment variable key used
+type = "string"
+default = "postgres"
+
+[vars.PGPassword]
+var = "FOOBAR_PG_PASSWORD"
+type = "string"
+
+[vars.Environment]
+var = "FOOBAR_DEPLOY_ENV"
+type = "enum" # enum types require a list of string values
+enum_values = ["local", "dev", "prod"]
