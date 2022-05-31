@@ -22,13 +22,35 @@ type ConfigSpec struct {
 type ConfigCtx struct {
 	Spec         *ConfigSpec
 	SpecFilename string
+	Imports      []string
 }
 
 func ConfigCtxFromFile(filename string) *ConfigCtx {
 	spec := &ConfigSpec{}
 	toml.DecodeFile(filename, spec)
+	imports := []string{"os"}
+	// fmt is used for enums
+	// errors is used if any vars without defaults are present
+	importErrors, importFmt := false, false
+	for _, varDef := range spec.Vars {
+		if varDef.Default != "" {
+			importErrors = true
+		}
+		if varDef.Type == "enum" {
+			importFmt = true
+		}
+	}
+
+	if importErrors {
+		imports = append(imports, "errors")
+	}
+	if importFmt {
+		imports = append(imports, "fmt")
+	}
+
 	return &ConfigCtx{
 		Spec:         spec,
 		SpecFilename: filename,
+		Imports:      imports,
 	}
 }

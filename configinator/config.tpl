@@ -3,9 +3,9 @@
 package {{.Spec.Settings.PackageName}}
 
 import (
-  "errors"
-  "fmt"
-  "os"
+  {{range $import := .Imports}}
+    "{{$import}}"
+  {{- end}}
 )
 
 {{/* For all enum vars, generate string enum types and const values for them */}}
