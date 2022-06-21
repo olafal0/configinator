@@ -33,7 +33,7 @@ func ConfigCtxFromFile(filename string) *ConfigCtx {
 	// errors is used if any vars without defaults are present
 	importErrors, importFmt := false, false
 	for _, varDef := range spec.Vars {
-		if varDef.Default != "" {
+		if varDef.Default == "" {
 			importErrors = true
 		}
 		if varDef.Type == "enum" {
