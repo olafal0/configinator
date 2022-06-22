@@ -13,6 +13,7 @@ var configTemplate = template.Must(template.New("config").Funcs(
 	map[string]interface{}{
 		"export":   export,
 		"unexport": unexport,
+		"asInt":    asInt,
 	},
 ).Parse(configSrc))
 
@@ -29,6 +30,13 @@ func unexport(s string) string {
 		uppers++
 	}
 	return strings.ToLower(s[0:uppers]) + s[uppers:]
+}
+
+func asInt(s string) string {
+	if s == "" {
+		return "0"
+	}
+	return s
 }
 
 func ExecuteTemplate(buf *bytes.Buffer, configCtx *ConfigCtx) error {

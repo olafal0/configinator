@@ -1,11 +1,18 @@
 package configinator
 
-import "github.com/BurntSushi/toml"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/BurntSushi/toml"
+)
 
 type ConfigVarDef struct {
 	Var        string   `toml:"var"`
+	Doc        string   `toml:"doc"`
 	Type       string   `toml:"type"`
 	Default    string   `toml:"default"`
+	Optional   bool     `toml:"optional"`
 	EnumValues []string `toml:"enum_values"`
 }
 
@@ -15,8 +22,8 @@ type ConfigSettings struct {
 }
 
 type ConfigSpec struct {
-	Settings ConfigSettings          `toml:"settings"`
-	Vars     map[string]ConfigVarDef `toml:"vars"`
+	Settings ConfigSettings           `toml:"settings"`
+	Vars     map[string]*ConfigVarDef `toml:"vars"`
 }
 
 type ConfigCtx struct {
@@ -25,19 +32,35 @@ type ConfigCtx struct {
 	Imports      []string
 }
 
-func ConfigCtxFromFile(filename string) *ConfigCtx {
+func ConfigCtxFromFile(filename string) (*ConfigCtx, error) {
 	spec := &ConfigSpec{}
 	toml.DecodeFile(filename, spec)
 	imports := []string{"os"}
 	// fmt is used for enums
 	// errors is used if any vars without defaults are present
-	importErrors, importFmt := false, false
-	for _, varDef := range spec.Vars {
-		if varDef.Default == "" {
+	importErrors, importFmt, importStrconv := false, false, false
+	for varKey, varDef := range spec.Vars {
+		// Vars should be type string by default
+		if varDef.Type == "" {
+			varDef.Type = "string"
+		}
+		if varDef.Type == "int64" {
+			importStrconv = true
+		}
+		// Multiline doc comments need to have comment markers inserted at every line break
+		if strings.ContainsRune(varDef.Doc, '\n') {
+			varDef.Doc = strings.Join(strings.Split(varDef.Doc, "\n"), "\n// ")
+		}
+		// Errors should be imported for any vars that can fail if they're missing
+		if varDef.Default == "" && !varDef.Optional {
 			importErrors = true
 		}
+		// fmt.Errorf is used for enum types
 		if varDef.Type == "enum" {
 			importFmt = true
+			if varDef.Optional {
+				return nil, fmt.Errorf("optional enum types not allowed (var %s)", varKey)
+			}
 		}
 	}
 
@@ -47,10 +70,13 @@ func ConfigCtxFromFile(filename string) *ConfigCtx {
 	if importFmt {
 		imports = append(imports, "fmt")
 	}
+	if importStrconv {
+		imports = append(imports, "strconv")
+	}
 
 	return &ConfigCtx{
 		Spec:         spec,
 		SpecFilename: filename,
 		Imports:      imports,
-	}
+	}, nil
 }

@@ -38,6 +38,21 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
   cfg := &{{.Spec.Settings.Name}}Config{}
 
   {{range $varName, $varDef := .Spec.Vars}}
+  {{- if $varDef.Optional }}
+  {{- if eq $varDef.Type "int64" }}
+  if val, ok := os.LookupEnv("{{$varDef.Var}}"); ok {
+    if converted, err := strconv.ParseInt(val, 10, 64); err == nil {
+      cfg.{{unexport $varName}} = converted
+    } else {
+      return nil, err
+    }
+  } {{- if $varDef.Default}} else {
+    cfg.{{unexport $varName}} = {{asInt $varDef.Default}}
+  } {{- end}}
+  {{- else}}
+  cfg.{{unexport $varName}} = os.Getenv("{{$varDef.Var}}")
+  {{- end}}
+  {{- else}}
   if {{unexport $varName}}, ok := os.LookupEnv("{{$varDef.Var}}"); ok {
     {{- if eq $varDef.Type "enum"}}
     switch {{$.Spec.Settings.Name}}{{$varName}}({{unexport $varName}}) {
@@ -48,16 +63,27 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
       default:
         return nil, fmt.Errorf("unexpected {{$varDef.Var}} value: '%s'", {{unexport $varName}})
     }
+    {{- else if eq $varDef.Type "int64"}}
+    if converted, err := strconv.ParseInt({{unexport $varName}}, 10, 64); err == nil {
+      cfg.{{unexport $varName}} = converted
+    } else {
+      return nil, err
+    }
     {{- else}}
-		cfg.{{unexport $varName}} = {{unexport $varName}}
+    cfg.{{unexport $varName}} = {{unexport $varName}}
     {{- end}}
 	} else {
   {{- if $varDef.Default}}
+    {{- if eq $varDef.Type "string" }}
     cfg.{{unexport $varName}} = "{{$varDef.Default}}"
+    {{- else}}
+    cfg.{{unexport $varName}} = {{asInt $varDef.Default}}
+    {{- end}}
   {{- else}}
 		return nil, errors.New("required option missing: {{$varDef.Var}}")
   {{- end}}
   }
+  {{- end}}
   {{end}}
 
   return cfg, nil
@@ -66,9 +92,15 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
 {{- /* Create booladic functions for checking enum equality */}}
 
 {{range $varName, $varDef := .Spec.Vars}}
+{{- if $varDef.Doc }}
+// {{ $varDef.Doc}}
+{{- end }}
 {{- if eq $varDef.Type "enum"}}
+func (c *{{$.Spec.Settings.Name}}Config) {{$.Spec.Settings.Name}}{{$varName}}() {{$.Spec.Settings.Name}}{{$varName}} {
+  return c.{{unexport $varName}}
+}
 {{- range $enumValue := $varDef.EnumValues}}
-func (c *{{$.Spec.Settings.Name}}Config) Is{{export $enumValue}}{{$varName}}() bool {
+func (c *{{$.Spec.Settings.Name}}Config) Is{{$varName}}{{export $enumValue}}() bool {
   return c.{{unexport $varName}} == {{$.Spec.Settings.Name}}{{$varName}}{{export $enumValue}}
 }
 {{- end}}

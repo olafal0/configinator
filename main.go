@@ -18,10 +18,13 @@ func main() {
 	outFile := flag.String("outfile", "config.go", "The output go file for generated code")
 	flag.Parse()
 
-	configCtx := configinator.ConfigCtxFromFile(*specFile)
+	configCtx, err := configinator.ConfigCtxFromFile(*specFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	buf := new(bytes.Buffer)
-	err := configinator.ExecuteTemplate(buf, configCtx)
+	err = configinator.ExecuteTemplate(buf, configCtx)
 	if err != nil {
 		log.Fatal(err)
 	}
