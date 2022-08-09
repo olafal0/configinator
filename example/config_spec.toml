@@ -15,3 +15,7 @@ type = "string"
 var = "FOOBAR_DEPLOY_ENV"
 type = "enum" # enum types require a list of string values
 enum_values = ["local", "dev", "prod"]
+
+[vars.EnableSomething]
+var = "FOOBAR_ENABLE_SOMETHING"
+type = "bool"

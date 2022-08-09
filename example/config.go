@@ -17,13 +17,20 @@ const (
 )
 
 type FoobarConfig struct {
-	environment FoobarEnvironment
-	pgpassword  string
-	pgusername  string
+	enableSomething bool
+	environment     FoobarEnvironment
+	pgpassword      string
+	pgusername      string
 }
 
 func NewFoobarConfigFromEnv() (*FoobarConfig, error) {
 	cfg := &FoobarConfig{}
+
+	if enableSomething, ok := os.LookupEnv("FOOBAR_ENABLE_SOMETHING"); ok {
+		cfg.enableSomething = enableSomething == "true"
+	} else {
+		return nil, errors.New("required option missing: FOOBAR_ENABLE_SOMETHING")
+	}
 
 	if environment, ok := os.LookupEnv("FOOBAR_DEPLOY_ENV"); ok {
 		switch FoobarEnvironment(environment) {
@@ -55,13 +62,19 @@ func NewFoobarConfigFromEnv() (*FoobarConfig, error) {
 	return cfg, nil
 }
 
-func (c *FoobarConfig) IsLocalEnvironment() bool {
+func (c *FoobarConfig) EnableSomething() bool {
+	return c.enableSomething
+}
+func (c *FoobarConfig) FoobarEnvironment() FoobarEnvironment {
+	return c.environment
+}
+func (c *FoobarConfig) IsEnvironmentLocal() bool {
 	return c.environment == FoobarEnvironmentLocal
 }
-func (c *FoobarConfig) IsDevEnvironment() bool {
+func (c *FoobarConfig) IsEnvironmentDev() bool {
 	return c.environment == FoobarEnvironmentDev
 }
-func (c *FoobarConfig) IsProdEnvironment() bool {
+func (c *FoobarConfig) IsEnvironmentProd() bool {
 	return c.environment == FoobarEnvironmentProd
 }
 func (c *FoobarConfig) PGPassword() string {

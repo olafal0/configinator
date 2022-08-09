@@ -49,6 +49,12 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
   } {{- if $varDef.Default}} else {
     cfg.{{unexport $varName}} = {{asInt $varDef.Default}}
   } {{- end}}
+  {{- else if eq $varDef.Type "bool" }}
+  if val, ok := os.LookupEnv("{{$varDef.Var}}"); ok {
+    cfg.{{unexport $varName}} = val == "true"
+  } {{- if $varDef.Default}} else {
+    cfg.{{unexport $varName}} = {{$varDef.Default}}
+  } {{- end}}
   {{- else}}
   cfg.{{unexport $varName}} = os.Getenv("{{$varDef.Var}}")
   {{- end}}
@@ -69,6 +75,8 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
     } else {
       return nil, err
     }
+    {{- else if eq $varDef.Type "bool"}}
+    cfg.{{unexport $varName}} = {{unexport $varName}} == "true"
     {{- else}}
     cfg.{{unexport $varName}} = {{unexport $varName}}
     {{- end}}
@@ -76,6 +84,8 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
   {{- if $varDef.Default}}
     {{- if eq $varDef.Type "string" }}
     cfg.{{unexport $varName}} = "{{$varDef.Default}}"
+    {{- else if eq $varDef.Type "bool"}}
+    cfg.{{unexport $varName}} = {{$varDef.Default}}
     {{- else}}
     cfg.{{unexport $varName}} = {{asInt $varDef.Default}}
     {{- end}}
