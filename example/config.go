@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type FoobarEnvironment string
@@ -19,6 +20,7 @@ const (
 type FoobarConfig struct {
 	enableSomething bool
 	environment     FoobarEnvironment
+	maxConnections  int64
 	pgpassword      string
 	pgusername      string
 }
@@ -47,11 +49,17 @@ func NewFoobarConfigFromEnv() (*FoobarConfig, error) {
 		return nil, errors.New("required option missing: FOOBAR_DEPLOY_ENV")
 	}
 
-	if pgpassword, ok := os.LookupEnv("FOOBAR_PG_PASSWORD"); ok {
-		cfg.pgpassword = pgpassword
+	if maxConnections, ok := os.LookupEnv("FOOBAR_MAX_CONNECTIONS"); ok {
+		if converted, err := strconv.ParseInt(maxConnections, 10, 64); err == nil {
+			cfg.maxConnections = converted
+		} else {
+			return nil, err
+		}
 	} else {
-		return nil, errors.New("required option missing: FOOBAR_PG_PASSWORD")
+		cfg.maxConnections = 256 * 256
 	}
+
+	cfg.pgpassword = os.Getenv("FOOBAR_PG_PASSWORD")
 
 	if pgusername, ok := os.LookupEnv("FOOBAR_PG_USERNAME"); ok {
 		cfg.pgusername = pgusername
@@ -76,6 +84,9 @@ func (c *FoobarConfig) IsEnvironmentDev() bool {
 }
 func (c *FoobarConfig) IsEnvironmentProd() bool {
 	return c.environment == FoobarEnvironmentProd
+}
+func (c *FoobarConfig) MaxConnections() int64 {
+	return c.maxConnections
 }
 func (c *FoobarConfig) PGPassword() string {
 	return c.pgpassword

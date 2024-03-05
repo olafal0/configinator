@@ -34,7 +34,10 @@ type ConfigCtx struct {
 
 func ConfigCtxFromFile(filename string) (*ConfigCtx, error) {
 	spec := &ConfigSpec{}
-	toml.DecodeFile(filename, spec)
+	_, err := toml.DecodeFile(filename, spec)
+	if err != nil {
+		return nil, err
+	}
 	imports := []string{"os"}
 	// fmt is used for enums
 	// errors is used if any vars without defaults are present
@@ -43,6 +46,10 @@ func ConfigCtxFromFile(filename string) (*ConfigCtx, error) {
 		// Vars should be type string by default
 		if varDef.Type == "" {
 			varDef.Type = "string"
+		}
+		// Check for valid types
+		if varDef.Type != "string" && varDef.Type != "int64" && varDef.Type != "enum" && varDef.Type != "bool" {
+			return nil, fmt.Errorf("invalid type %s for var %s", varDef.Type, varKey)
 		}
 		if varDef.Type == "int64" {
 			importStrconv = true
@@ -54,6 +61,9 @@ func ConfigCtxFromFile(filename string) (*ConfigCtx, error) {
 		// Errors should be imported for any vars that can fail if they're missing
 		if varDef.Default == "" && !varDef.Optional {
 			importErrors = true
+		}
+		if varDef.Default != "" && varDef.Optional {
+			return nil, fmt.Errorf("optional vars cannot have defaults (var %s). Including a default without optional = true will have the same effect", varKey)
 		}
 		// fmt.Errorf is used for enum types
 		if varDef.Type == "enum" {
