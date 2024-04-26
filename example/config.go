@@ -17,6 +17,14 @@ const (
 	FoobarEnvironmentProd  FoobarEnvironment = "prod"
 )
 
+const (
+	FoobarConfigKeyEnableSomething = "FOOBAR_ENABLE_SOMETHING"
+	FoobarConfigKeyEnvironment     = "FOOBAR_DEPLOY_ENV"
+	FoobarConfigKeyMaxConnections  = "FOOBAR_MAX_CONNECTIONS"
+	FoobarConfigKeyPGPassword      = "FOOBAR_PG_PASSWORD"
+	FoobarConfigKeyPGUsername      = "FOOBAR_PG_USERNAME"
+)
+
 type FoobarConfig struct {
 	enableSomething bool
 	environment     FoobarEnvironment
@@ -28,13 +36,13 @@ type FoobarConfig struct {
 func NewFoobarConfigFromEnv() (*FoobarConfig, error) {
 	cfg := &FoobarConfig{}
 
-	if enableSomething, ok := os.LookupEnv("FOOBAR_ENABLE_SOMETHING"); ok {
+	if enableSomething, ok := os.LookupEnv(FoobarConfigKeyEnableSomething); ok {
 		cfg.enableSomething = enableSomething == "true"
 	} else {
 		return nil, errors.New("required option missing: FOOBAR_ENABLE_SOMETHING")
 	}
 
-	if environment, ok := os.LookupEnv("FOOBAR_DEPLOY_ENV"); ok {
+	if environment, ok := os.LookupEnv(FoobarConfigKeyEnvironment); ok {
 		switch FoobarEnvironment(environment) {
 		case FoobarEnvironmentLocal:
 			cfg.environment = FoobarEnvironmentLocal
@@ -49,7 +57,7 @@ func NewFoobarConfigFromEnv() (*FoobarConfig, error) {
 		return nil, errors.New("required option missing: FOOBAR_DEPLOY_ENV")
 	}
 
-	if maxConnections, ok := os.LookupEnv("FOOBAR_MAX_CONNECTIONS"); ok {
+	if maxConnections, ok := os.LookupEnv(FoobarConfigKeyMaxConnections); ok {
 		if converted, err := strconv.ParseInt(maxConnections, 10, 64); err == nil {
 			cfg.maxConnections = converted
 		} else {
@@ -59,9 +67,9 @@ func NewFoobarConfigFromEnv() (*FoobarConfig, error) {
 		cfg.maxConnections = 256 * 256
 	}
 
-	cfg.pgpassword = os.Getenv("FOOBAR_PG_PASSWORD")
+	cfg.pgpassword = os.Getenv(FoobarConfigKeyPGPassword)
 
-	if pgusername, ok := os.LookupEnv("FOOBAR_PG_USERNAME"); ok {
+	if pgusername, ok := os.LookupEnv(FoobarConfigKeyPGUsername); ok {
 		cfg.pgusername = pgusername
 	} else {
 		cfg.pgusername = "postgres"

@@ -22,6 +22,14 @@ const (
 {{- end}}
 {{- end}}
 
+{{- /* Generate constants for var keys */}}
+
+const (
+  {{- range $varName, $varDef := .Spec.Vars}}
+  {{$.Spec.Settings.Name}}ConfigKey{{$varName}} = "{{$varDef.Var}}"
+  {{- end}}
+)
+
 {{- /* Generate the main config struct type */}}
 
 type {{$.Spec.Settings.Name}}Config struct {
@@ -40,7 +48,7 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
   {{range $varName, $varDef := .Spec.Vars}}
   {{- if $varDef.Optional }}
   {{- if eq $varDef.Type "int64" }}
-  if val, ok := os.LookupEnv("{{$varDef.Var}}"); ok {
+  if val, ok := os.LookupEnv({{$.Spec.Settings.Name}}ConfigKey{{$varName}}); ok {
     if converted, err := strconv.ParseInt(val, 10, 64); err == nil {
       cfg.{{unexport $varName}} = converted
     } else {
@@ -50,16 +58,16 @@ func New{{.Spec.Settings.Name}}ConfigFromEnv() (*{{.Spec.Settings.Name}}Config, 
     cfg.{{unexport $varName}} = {{asInt $varDef.Default}}
   } {{- end}}
   {{- else if eq $varDef.Type "bool" }}
-  if val, ok := os.LookupEnv("{{$varDef.Var}}"); ok {
+  if val, ok := os.LookupEnv({{$.Spec.Settings.Name}}ConfigKey{{$varName}}); ok {
     cfg.{{unexport $varName}} = val == "true"
   } {{- if $varDef.Default}} else {
     cfg.{{unexport $varName}} = {{$varDef.Default}}
   } {{- end}}
   {{- else}}
-  cfg.{{unexport $varName}} = os.Getenv("{{$varDef.Var}}")
+  cfg.{{unexport $varName}} = os.Getenv({{$.Spec.Settings.Name}}ConfigKey{{$varName}})
   {{- end}}
   {{- else}}
-  if {{unexport $varName}}, ok := os.LookupEnv("{{$varDef.Var}}"); ok {
+  if {{unexport $varName}}, ok := os.LookupEnv({{$.Spec.Settings.Name}}ConfigKey{{$varName}}); ok {
     {{- if eq $varDef.Type "enum"}}
     switch {{$.Spec.Settings.Name}}{{$varName}}({{unexport $varName}}) {
       {{- range $enumValue := $varDef.EnumValues}}
