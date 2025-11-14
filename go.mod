@@ -1,5 +1,5 @@
 module github.com/olafal0/configinator
 
-go 1.20
+go 1.25
 
-require github.com/BurntSushi/toml v1.1.0
+require github.com/BurntSushi/toml v1.5.0
